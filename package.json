@@ -1,0 +1,25 @@
+{
+  "name": "zombie-survival-wasm-oop",
+  "version": "1.0.0",
+  "description": "2D Top-Down Zombie Survival Arena with C++ OOP Simulation & WebAssembly Frontend",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "node scripts/build.js",
+    "build:cpp": "powershell -ExecutionPolicy Bypass -File ./build_wasm.ps1",
+    "build:cpp:bash": "bash ./build_wasm.sh"
+  },
+  "keywords": [
+    "cpp",
+    "oop",
+    "webassembly",
+    "wasm",
+    "emscripten",
+    "game-development",
+    "canvas",
+    "college-project"
+  ],
+  "author": "College Project Team",
+  "license": "MIT"
+}

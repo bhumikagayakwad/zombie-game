@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Zombie Survival 2D — C++ OOP & WebAssembly Arena</title>
+  <meta name="description" content="A fast-paced 2D top-down zombie survival arena game demonstrating C++ Object-Oriented Programming (OOP) and WebAssembly integration with HTML5 Canvas.">
+  
+  <!-- Modern Indie Game Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD Overlay (Visible during PLAYING) -->
+    <div id="hud-overlay" class="hud-overlay hidden">
+      <!-- Top Bar: Wave, Timer, Score, Remaining Zombies -->
+      <header class="hud-top">
+        <div class="hud-stat-box" id="hud-wave-box">
+          <span class="stat-label">WAVE</span>
+          <span class="stat-value highlight-cyan" id="hud-wave">1</span>
+        </div>
+
+        <div class="hud-stat-box" id="hud-zombies-box">
+          <span class="stat-label">ZOMBIES LEFT</span>
+          <span class="stat-value highlight-red" id="hud-zombies">0</span>
+        </div>
+
+        <div class="hud-stat-box" id="hud-timer-box">
+          <span class="stat-label">SURVIVED</span>
+          <span class="stat-value" id="hud-timer">00:00</span>
+        </div>
+
+        <div class="hud-stat-box" id="hud-score-box">
+          <span class="stat-label">SCORE</span>
+          <span class="stat-value highlight-amber" id="hud-score">0</span>
+        </div>
+
+        <div class="hud-actions">
+          <button id="btn-sound-toggle" class="btn-icon" title="Toggle Sound" aria-label="Toggle Sound">🔊</button>
+          <button id="btn-pause-game" class="btn-icon" title="Pause Game (Esc or P)" aria-label="Pause Game">⏸</button>
+        </div>
+      </header>
+
+      <!-- Wave Announcement Banner -->
+      <div id="wave-banner" class="wave-banner hidden">
+        <h2 id="wave-banner-title">WAVE 1</h2>
+        <p id="wave-banner-sub">INCOMING INFECTION...</p>
+      </div>
+
+      <!-- Bottom Bar: Player Health & Ammunition -->
+      <footer class="hud-bottom">
+        <!-- Health Gauge -->
+        <div class="vital-container">
+          <div class="vital-header">
+            <span class="vital-title">HEALTH</span>
+            <span class="vital-numeric" id="hud-health-text">100 / 100</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="hud-health-fill" class="progress-bar-fill health-bar" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Engine Badge -->
+        <div class="engine-badge-container">
+          <span id="engine-status-pill" class="engine-pill js-mode">Engine: JS Fallback</span>
+        </div>
+
+        <!-- Ammo Gauge -->
+        <div class="vital-container">
+          <div class="vital-header">
+            <span class="vital-title">AMMUNITION</span>
+            <span class="vital-numeric" id="hud-ammo-text">30 / 60</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="hud-ammo-fill" class="progress-bar-fill ammo-bar" style="width: 50%;"></div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Mobile Touch Controls (shown on touch devices) -->
+      <div id="mobile-controls" class="mobile-controls hidden">
+        <div id="touch-joystick-zone" class="joystick-zone">
+          <div id="touch-joystick-knob" class="joystick-knob"></div>
+        </div>
+        <div class="touch-action-zone">
+          <button id="touch-shoot-btn" class="touch-btn shoot-btn">FIRE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen A: Main Menu Screen -->
+    <div id="screen-menu" class="screen-overlay active">
+      <div class="modal-card main-menu-card">
+        <div class="brand-badge">COLLEGE OOP PROJECT &bull; C++ & WASM</div>
+        <h1 class="game-title">ZOMBIE SURVIVAL</h1>
+        <p class="tagline">Survive relentless undead waves using C++ Object-Oriented simulation in your browser.</p>
+
+        <div class="stats-ribbon">
+          <div class="ribbon-item">
+            <span class="ribbon-label">BEST RECORD</span>
+            <span class="ribbon-value" id="menu-best-score">0 PTS</span>
+          </div>
+          <div class="ribbon-item">
+            <span class="ribbon-label">BEST SURVIVAL</span>
+            <span class="ribbon-value" id="menu-best-time">00:00</span>
+          </div>
+        </div>
+
+        <div class="menu-button-group">
+          <button id="btn-play-game" class="btn btn-primary pulse-btn">PLAY GAME</button>
+          <button id="btn-controls-guide" class="btn btn-secondary">CONTROLS & GUIDE</button>
+          <button id="btn-oop-guide" class="btn btn-outline">C++ OOP CONCEPTS</button>
+        </div>
+
+        <!-- Quick Controls Preview -->
+        <div class="controls-pill-grid">
+          <span class="ctrl-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+          <span class="ctrl-pill"><kbd>Mouse</kbd> Aim</span>
+          <span class="ctrl-pill"><kbd>Left-Click</kbd> / <kbd>Space</kbd> Shoot</span>
+          <span class="ctrl-pill"><kbd>P</kbd> / <kbd>Esc</kbd> Pause</span>
+        </div>
+
+        <div class="menu-footer">
+          <span id="menu-engine-indicator">Checking WebAssembly engine...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen B: Pause Overlay -->
+    <div id="screen-pause" class="screen-overlay hidden">
+      <div class="modal-card pause-card">
+        <h2 class="section-title">GAME PAUSED</h2>
+        <p class="section-desc">Tactical pause. Review your status and objectives.</p>
+
+        <div class="pause-stats-summary">
+          <div>Wave: <span id="pause-wave">1</span></div>
+          <div>Score: <span id="pause-score">0</span></div>
+          <div>Remaining Undead: <span id="pause-zombies">0</span></div>
+        </div>
+
+        <div class="menu-button-group">
+          <button id="btn-resume-game" class="btn btn-primary">RESUME</button>
+          <button id="btn-restart-from-pause" class="btn btn-secondary">RESTART ARENA</button>
+          <button id="btn-oop-from-pause" class="btn btn-outline">C++ ARCHITECTURE</button>
+          <button id="btn-menu-from-pause" class="btn btn-ghost">MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen C: Game-Over Screen -->
+    <div id="screen-gameover" class="screen-overlay hidden">
+      <div class="modal-card gameover-card">
+        <div class="danger-header">OUTPOST COMPROMISED</div>
+        <h2 class="gameover-title">YOU DIED</h2>
+        
+        <div class="gameover-results-grid">
+          <div class="result-tile">
+            <span class="result-label">FINAL SCORE</span>
+            <span class="result-val highlight-amber" id="go-final-score">0</span>
+          </div>
+          <div class="result-tile">
+            <span class="result-label">WAVES SURVIVED</span>
+            <span class="result-val highlight-cyan" id="go-final-wave">0</span>
+          </div>
+          <div class="result-tile">
+            <span class="result-label">SURVIVAL TIME</span>
+            <span class="result-val" id="go-final-time">00:00</span>
+          </div>
+          <div class="result-tile">
+            <span class="result-label">ALL-TIME BEST</span>
+            <span class="result-val highlight-green" id="go-best-score">0</span>
+          </div>
+        </div>
+
+        <div id="new-high-score-banner" class="high-score-banner hidden">
+          ★ NEW RECORD ACHIEVED! ★
+        </div>
+
+        <div class="menu-button-group">
+          <button id="btn-restart-game" class="btn btn-primary pulse-btn">TRY AGAIN</button>
+          <button id="btn-menu-from-go" class="btn btn-secondary">RETURN TO MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen D: Controls & Mechanics Modal -->
+    <div id="modal-controls" class="screen-overlay hidden">
+      <div class="modal-card large-modal">
+        <h2 class="section-title">COMBAT MANUAL & SUPPLIES</h2>
+        
+        <div class="manual-columns">
+          <div class="manual-column">
+            <h3>Player Survival</h3>
+            <p><strong>Movement:</strong> Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to maneuver around the outpost. Keep moving to prevent zombies from flanking you.</p>
+            <p><strong>Weapons:</strong> Aim with your mouse cursor and fire with <strong>Left Mouse Button</strong> or <kbd>Space</kbd>. Bullets fly at 650 units/sec and deal 35 damage.</p>
+            <p><strong>Invulnerability Frames:</strong> After taking contact damage, you receive a 0.8s protective shield (blinking animation) to prevent instant repeated damage.</p>
+          </div>
+
+          <div class="manual-column">
+            <h3>Undead & Supplies</h3>
+            <div class="legend-item">
+              <span class="legend-color legend-zombie-norm"></span>
+              <div><strong>Normal Zombie:</strong> 75 HP, 95 speed, 100 points.</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-zombie-runner"></span>
+              <div><strong>Runner Zombie:</strong> 45 HP, 145 speed, 150 points. Agile and fast!</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-zombie-tank"></span>
+              <div><strong>Tank Zombie:</strong> 180 HP, 65 speed, 300 points. Heavy hit & high health.</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-health"></span>
+              <div><strong>Health Pack (+30 HP):</strong> Neon green crate restores vitality up to max 100.</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-ammo"></span>
+              <div><strong>Ammo Box (+30 Rds):</strong> Amber crate re-supplies your magazine.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-close-controls" class="btn btn-primary">BACK TO ARENA</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen E: OOP Architecture & College Viva Guide Modal -->
+    <div id="modal-oop" class="screen-overlay hidden">
+      <div class="modal-card large-modal oop-modal">
+        <div class="brand-badge">ACADEMIC OOP ARCHITECTURE</div>
+        <h2 class="section-title">C++ OBJECT-ORIENTED DESIGN GUIDE</h2>
+        <p class="section-desc">Designed for college evaluations and viva presentations. Every concept is directly linked to source code.</p>
+
+        <div class="oop-cards-grid">
+          <!-- Concept 1: Inheritance -->
+          <div class="oop-tile">
+            <div class="oop-badge">Inheritance</div>
+            <h4>Base Class Entity</h4>
+            <p><code>Player</code>, <code>Zombie</code>, <code>Bullet</code>, and <code>Supply</code> derive from abstract <code>Entity</code>, inheriting spatial coordinates (<code>m_x</code>, <code>m_y</code>), bounding radius, and active status.</p>
+            <pre><code>class Player : public Entity { ... };
+class Zombie : public Entity { ... };</code></pre>
+          </div>
+
+          <!-- Concept 2: Encapsulation -->
+          <div class="oop-tile">
+            <div class="oop-badge">Encapsulation</div>
+            <h4>Health & Weapon Safety</h4>
+            <p>Internal state variables are strictly <code>private</code>. Health invariants (0 &le; current &le; max) and non-negative ammo boundaries are enforced via methods, never direct mutation.</p>
+            <pre><code>void Health::heal(float amount) {
+    m_current = std::min(m_current + amount, m_max);
+}</code></pre>
+          </div>
+
+          <!-- Concept 3: Composition -->
+          <div class="oop-tile">
+            <div class="oop-badge">Composition</div>
+            <h4>"Has-A" Relationships</h4>
+            <p><code>Player</code> has-a <code>Health</code> object and has-a <code>Weapon</code> object. <code>Game</code> has-a <code>Player</code> and <code>std::vector</code> containers of entities, promoting modularity over deep inheritance trees.</p>
+            <pre><code>class Player : public Entity {
+    Health m_health;
+    Weapon m_weapon;
+};</code></pre>
+          </div>
+
+          <!-- Concept 4: Polymorphism -->
+          <div class="oop-tile">
+            <div class="oop-badge">Polymorphism</div>
+            <h4>Virtual update(dt)</h4>
+            <p>The base class <code>Entity</code> declares <code>virtual void update(float dt) = 0</code>. Each derived entity overrides this with customized physics (ballistic for Bullets, AI chase for Zombies).</p>
+            <pre><code>void Zombie::update(float dt) override;
+void Bullet::update(float dt) override;</code></pre>
+          </div>
+        </div>
+
+        <!-- Viva Questions Cheat Sheet -->
+        <div class="viva-section">
+          <h3>5 Top College Viva Questions & Answers</h3>
+          <div class="viva-qa">
+            <div class="viva-q">Q1: Why use WebAssembly (WASM) instead of writing all the game logic in JavaScript?</div>
+            <div class="viva-a">WASM allows high-performance, deterministic C++ simulation code to run near-native speed in browser sandboxes. It decouples the core domain model (physics, collision, state) from the rendering platform.</div>
+          </div>
+          <div class="viva-qa">
+            <div class="viva-q">Q2: How does the Player class demonstrate Composition over Inheritance?</div>
+            <div class="viva-a">Player inherits from Entity ("is-an Entity"), but composes Health and Weapon ("has-a Health", "has-a Weapon"). This allows swapping weapons or health logic without touching the player class hierarchy.</div>
+          </div>
+          <div class="viva-qa">
+            <div class="viva-q">Q3: Why is the destructor of Entity marked as virtual?</div>
+            <div class="viva-a">Virtual destructors prevent memory leaks when deleting derived objects (like Zombie or Player) through base-class pointers (<code>Entity*</code>).</div>
+          </div>
+          <div class="viva-qa">
+            <div class="viva-q">Q4: How are collisions calculated without external physics libraries?</div>
+            <div class="viva-a">Circle-circle Euclidean collision: <code>(dx² + dy²) &le; (r₁ + r₂)²</code>. This avoids expensive square roots unless needed, keeping updates ultra-fast across hundreds of entities.</div>
+          </div>
+          <div class="viva-qa">
+            <div class="viva-q">Q5: How does delta-time (dt) ensure consistent gameplay?</div>
+            <div class="viva-a">Multiplying velocities by <code>dt</code> ensures player and zombie movement distance depends on actual elapsed real time rather than the monitor's frame rate (60Hz, 120Hz, etc.).</div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-close-oop" class="btn btn-primary">CLOSE GUIDE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dual-Engine Architecture:
+       1. C++ Fallback Simulation (Pure JS Mirror of C++ Classes)
+       2. WebAssembly Loader & Canvas Orchestrator
+  -->
+  <script src="cpp-fallback-engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
